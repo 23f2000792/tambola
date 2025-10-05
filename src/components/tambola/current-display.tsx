@@ -18,9 +18,9 @@ export default function CurrentDisplay({ currentNumber, calledNumbers, isCalling
         <CardTitle className="font-headline text-xl">Current Number</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col items-center justify-center gap-4">
-        <div className="flex h-36 w-36 items-center justify-center rounded-full bg-primary/20 p-2">
+        <div className="flex h-28 w-28 sm:h-36 sm:w-36 items-center justify-center rounded-full bg-primary/20 p-2">
           <div className="flex h-full w-full items-center justify-center rounded-full bg-primary text-primary-foreground">
-            <span className="text-7xl font-bold">
+            <span className="text-6xl sm:text-7xl font-bold">
               {currentNumber ?? "-"}
             </span>
           </div>
@@ -37,7 +37,7 @@ export default function CurrentDisplay({ currentNumber, calledNumbers, isCalling
                         <Badge
                         key={index}
                         variant="secondary"
-                        className="text-lg"
+                        className="text-base sm:text-lg"
                         >
                         {num}
                         </Badge>

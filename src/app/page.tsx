@@ -96,12 +96,16 @@ export default function Home() {
   
   const handlePause = () => {
     setIsCalling(false);
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
   };
 
   const handleNewGame = async () => {
     setIsCalling(false);
     if (audioRef.current) {
       audioRef.current.pause();
+      audioRef.current = null;
     }
     await resetGame();
     toast({
@@ -119,7 +123,7 @@ export default function Home() {
         currentAudio.removeEventListener('ended', onEnded);
       };
     }
-  }, [audioRef.current]);
+  }, [audioRef.current, isCalling]);
 
 
   const isLoading = isUserLoading || isGameLoading;
