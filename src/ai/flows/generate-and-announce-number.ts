@@ -121,20 +121,14 @@ const generateAndAnnounceNumberFlow = ai.defineFlow(
 
     if (!announceText || announceText.trim() === '') {
       console.error('TTS text is empty!');
-      // Return a failure but don't throw, so the frontend can handle it
       return { number, audio: '' };
     }
 
     try {
       const {media} = await ai.generate({
-        model: googleAI.model('gemini-2.5-flash-preview-tts'),
+        model: googleAI.model('text-to-speech-1'),
         config: {
           responseModalities: ['AUDIO'],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: 'Algenib' },
-            },
-          },
         },
         prompt: announceText,
       });
@@ -153,8 +147,6 @@ const generateAndAnnounceNumberFlow = ai.defineFlow(
       return {number: number, audio: audio};
     } catch (err) {
       console.error("TTS generation failed:", err);
-      // As a fallback, we can return the number with no audio.
-      // The frontend can handle this by just displaying the number.
       return { number, audio: '' };
     }
   }
