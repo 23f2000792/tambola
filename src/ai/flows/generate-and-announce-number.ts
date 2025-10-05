@@ -82,9 +82,9 @@ async (input) => {
 
 const announceNumberPrompt = ai.definePrompt({
   name: 'announceNumberPrompt',
-  input: z.object({
+  input: {schema: z.object({
     number: z.number().describe('The number to announce.'),
-  }),
+  })},
   prompt: `You are a Tambola (Bingo) caller. Announce the number in a fun and descriptive way.
 For single-digit numbers, say "Only number X".
 For two-digit numbers, say the digits individually and then the full number. For example, for 21, say "Two One, Twenty-One".
@@ -100,7 +100,7 @@ const generateAndAnnounceNumberFlow = ai.defineFlow(
   async input => {
     const number = await generateNumberTool(input);
 
-    const announceText = await (await announceNumberPrompt({number})).text();
+    const announceText = (await announceNumberPrompt({number})).text;
 
     const { media } = await ai.generate({
       model: 'googleai/gemini-2.5-flash-preview-tts',
