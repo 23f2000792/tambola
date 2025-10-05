@@ -98,7 +98,7 @@ const generateAndAnnounceNumberFlow = ai.defineFlow(
     const announceText = getAnnouncementText(numberToAnnounce);
 
     if (!announceText || announceText.trim() === '') {
-      console.error('TTS text is empty!');
+      console.error("TTS text is empty!");
       return { number: numberToAnnounce, audio: '' };
     }
 
