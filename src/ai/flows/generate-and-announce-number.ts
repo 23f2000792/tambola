@@ -116,7 +116,7 @@ const generateAndAnnounceNumberFlow = ai.defineFlow(
 
     try {
       const {media} = await ai.generate({
-        model: googleAI.model('text-to-speech-1'),
+        model: googleAI.model('text-to-speech-2'),
         config: {
           responseModalities: ['AUDIO'],
           speechConfig: {

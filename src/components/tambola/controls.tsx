@@ -57,7 +57,7 @@ export default function GameControls({
 
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <Button variant="outline" className="col-span-2 h-12" disabled={isGameRunning}>
+          <Button variant="outline" className="col-span-2 h-12">
             <RefreshCw className="mr-2 h-4 w-4" /> New Game
           </Button>
         </AlertDialogTrigger>

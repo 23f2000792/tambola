@@ -27,7 +27,7 @@ export default function TambolaBoard({ calledNumbers, currentNumber }: TambolaBo
                 className={cn(
                   "flex aspect-square items-center justify-center rounded-md border text-sm sm:text-base md:text-lg font-bold transition-all duration-300",
                   "bg-muted/50 text-muted-foreground",
-                  isCalled && "bg-accent text-accent-foreground",
+                  isCalled && "bg-secondary text-secondary-foreground",
                   isCurrent && "bg-primary text-primary-foreground animate-glow ring-2 ring-primary"
                 )}
                 aria-label={`Number ${number}${isCalled ? ', called' : ''}`}
