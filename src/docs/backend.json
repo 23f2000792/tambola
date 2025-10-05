@@ -1,0 +1,38 @@
+{
+  "entities": {
+    "TambolaGame": {
+      "title": "TambolaGame",
+      "type": "object",
+      "description": "Represents a single Tambola game session.",
+      "properties": {
+        "calledNumbers": {
+          "type": "array",
+          "description": "The list of numbers that have been called in the game.",
+          "items": {
+            "type": "number"
+          }
+        },
+        "currentNumber": {
+          "type": "number",
+          "description": "The most recently called number."
+        }
+      },
+      "required": [
+        "calledNumbers"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "/tambolaGames/{gameId}": {
+      "schema": {
+        "$ref": "#/entities/TambolaGame"
+      },
+      "description": "Stores the Tambola game sessions. Each document represents a single game."
+    }
+  }
+}

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { db } from '@/lib/firebase';
-import { doc, onSnapshot, setDoc, getDoc, DocumentData } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { useToast } from './use-toast';
+import { useFirestore } from '@/firebase';
 
 interface GameState {
   calledNumbers: number[];
@@ -19,20 +19,22 @@ export function useTambolaGame(gameId: string) {
   const [gameState, setGameState] = useState<GameState>(initialState);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const firestore = useFirestore();
 
   useEffect(() => {
-    if (!gameId) return;
-    if (!db) {
+    if (!gameId || !firestore) {
+      if (!firestore) {
         toast({
             variant: "destructive",
             title: "Firebase Error",
-            description: "Firebase is not configured. Game state cannot be synced.",
+            description: "Firestore is not available. Game state cannot be synced.",
         });
-        setIsLoading(false);
-        return;
+      }
+      setIsLoading(false);
+      return;
     }
 
-    const gameDocRef = doc(db, 'tambolaGames', gameId);
+    const gameDocRef = doc(firestore, 'tambolaGames', gameId);
 
     const unsubscribe = onSnapshot(
       gameDocRef,
@@ -67,12 +69,12 @@ export function useTambolaGame(gameId: string) {
 
     // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, [gameId, toast]);
+  }, [gameId, toast, firestore]);
 
   const updateGame = useCallback(async (newNumber: number) => {
-    if (!gameId || !db) return;
+    if (!gameId || !firestore) return;
 
-    const gameDocRef = doc(db, 'tambolaGames', gameId);
+    const gameDocRef = doc(firestore, 'tambolaGames', gameId);
     const newCalledNumbers = [...gameState.calledNumbers, newNumber];
     
     try {
@@ -88,12 +90,12 @@ export function useTambolaGame(gameId: string) {
             description: "Failed to save the last number. The game might be out of sync.",
         });
     }
-  }, [gameId, gameState.calledNumbers, toast]);
+  }, [gameId, gameState.calledNumbers, toast, firestore]);
 
   const resetGame = useCallback(async () => {
-    if (!gameId || !db) return;
+    if (!gameId || !firestore) return;
 
-    const gameDocRef = doc(db, 'tambolaGames', gameId);
+    const gameDocRef = doc(firestore, 'tambolaGames', gameId);
     try {
         await setDoc(gameDocRef, initialState);
     } catch (error) {
@@ -104,7 +106,7 @@ export function useTambolaGame(gameId: string) {
             description: "Could not start a new game. Please try again.",
         });
     }
-  }, [gameId, toast]);
+  }, [gameId, toast, firestore]);
 
   return { gameState, updateGame, resetGame, isLoading };
 }

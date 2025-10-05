@@ -10,6 +10,7 @@ import TambolaBoard from '@/components/tambola/board';
 import GameControls from '@/components/tambola/controls';
 import CurrentDisplay from '@/components/tambola/current-display';
 import { Skeleton } from '@/components/ui/skeleton';
+import CalledNumbersHistory from '@/components/tambola/called-numbers-history';
 
 const GAME_ID = 'main-game';
 
@@ -102,6 +103,7 @@ export default function Home() {
           <div className="flex flex-col gap-4 w-full lg:w-96 lg:shrink-0">
             <Skeleton className="h-64 w-full" />
             <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-24 w-full" />
           </div>
           <Skeleton className="h-[30rem] w-full" />
         </div>
@@ -119,6 +121,7 @@ export default function Home() {
               onNewGame={handleNewGame}
               onNextNumber={handleNextNumber}
             />
+             <CalledNumbersHistory calledNumbers={gameState.calledNumbers} />
           </div>
           <TambolaBoard
             calledNumbers={gameState.calledNumbers}
