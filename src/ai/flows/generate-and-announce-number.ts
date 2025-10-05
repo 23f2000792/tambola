@@ -93,7 +93,7 @@ const announceNumberPrompt = ai.definePrompt({
     }),
   },
   prompt: `You are a Tambola (Bingo) caller. Announce the number exactly as instructed. Do not add any extra words or pleasantries.
-- For single-digit numbers, say "Only number X".
+- For single-digit numbers, say "Single number X".
 - For two-digit numbers, say the digits individually and then the full number. For example, for 21, say "Two One, Twenty-One".
 Number to call: {{number}}`,
 });
@@ -116,12 +116,12 @@ const generateAndAnnounceNumberFlow = ai.defineFlow(
 
     try {
       const {media} = await ai.generate({
-        model: googleAI.model('text-to-speech-2'),
+        model: googleAI.model('text-to-speech-2-anvil'),
         config: {
           responseModalities: ['AUDIO'],
           speechConfig: {
             voiceConfig: {
-              prebuiltVoiceConfig: {voiceName: 'Algenib'},
+              prebuiltVoiceConfig: { voiceName: 'en-US-Standard-C' },
             },
           },
         },
