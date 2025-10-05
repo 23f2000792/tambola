@@ -6,7 +6,6 @@
  * - generateAudio - A function that generates the audio.
  */
 
-import { ai } from '@/ai/genkit';
 import { GenerateAudioInputSchema, GenerateAudioOutputSchema, type GenerateAudioInput, type GenerateAudioOutput } from '@/ai/schemas/generate-audio-schema';
 import { TextToSpeechClient } from '@google-cloud/text-to-speech';
 
@@ -32,16 +31,6 @@ function getAnnouncementText(number: number): string {
 }
 
 export async function generateAudio(input: GenerateAudioInput): Promise<GenerateAudioOutput> {
-    return generateAudioFlow(input);
-}
-
-const generateAudioFlow = ai.defineFlow(
-  {
-    name: 'generateAudioFlow',
-    inputSchema: GenerateAudioInputSchema,
-    outputSchema: GenerateAudioOutputSchema,
-  },
-  async (input) => {
     const { numberToAnnounce } = input;
     const text = getAnnouncementText(numberToAnnounce);
 
@@ -75,5 +64,4 @@ const generateAudioFlow = ai.defineFlow(
       console.error("Error calling Google Cloud TTS API directly:", err);
       return { number: numberToAnnounce, audio: '' };
     }
-  }
-);
+}
