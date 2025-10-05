@@ -1,6 +1,7 @@
+
 "use client";
 
-import { RefreshCw, ChevronRight, Loader2 } from "lucide-react";
+import { RefreshCw, ChevronRight, Loader2, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -19,6 +20,7 @@ type GameControlsProps = {
   isGameOver: boolean;
   onNewGame: () => void;
   onNextNumber: () => void;
+  onPause: () => void;
 };
 
 export default function GameControls({
@@ -26,26 +28,32 @@ export default function GameControls({
   isGameOver,
   onNewGame,
   onNextNumber,
+  onPause,
 }: GameControlsProps) {
   return (
     <div className="grid grid-cols-2 gap-4">
-      <Button
-        variant="default"
-        size="lg"
-        onClick={onNextNumber}
-        disabled={isGameRunning || isGameOver}
-        className="text-lg h-14 col-span-2"
-      >
-        {isGameRunning ? (
-          <>
-            <Loader2 className="mr-2 h-6 w-6 animate-spin" /> Calling...
-          </>
-        ) : (
-          <>
-            <ChevronRight className="mr-2 h-6 w-6" /> {isGameOver ? "Game Over" : "Next Number"}
-          </>
-        )}
-      </Button>
+      {isGameRunning ? (
+        <Button
+          variant="outline"
+          size="lg"
+          onClick={onPause}
+          className="text-lg h-14 col-span-2"
+        >
+          <Pause className="mr-2 h-6 w-6" /> Pause
+        </Button>
+      ) : (
+        <Button
+          variant="default"
+          size="lg"
+          onClick={onNextNumber}
+          disabled={isGameOver}
+          className="text-lg h-14 col-span-2"
+        >
+            <>
+              <ChevronRight className="mr-2 h-6 w-6" /> {isGameOver ? "Game Over" : "Next Number"}
+            </>
+        </Button>
+      )}
 
       <AlertDialog>
         <AlertDialogTrigger asChild>

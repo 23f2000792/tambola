@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from 'react';
@@ -22,7 +23,7 @@ export default function Home() {
   const { user, isUserLoading } = useUser();
 
   React.useEffect(() => {
-    if (!user && !isUserLoading) {
+    if (auth && !user && !isUserLoading) {
       initiateAnonymousSignIn(auth);
     }
   }, [user, isUserLoading, auth]);
@@ -59,9 +60,7 @@ export default function Home() {
         const playPromise = audioRef.current.play();
         if (playPromise !== undefined) {
           playPromise.then(_ => {
-            audioRef.current?.addEventListener('ended', () => {
-              setIsCalling(false);
-            });
+            // Audio started playing
           }).catch(error => {
             console.error("Audio playback failed:", error);
             setIsCalling(false);
@@ -84,6 +83,10 @@ export default function Home() {
   const handleNextNumber = () => {
     callNextNumber();
   };
+  
+  const handlePause = () => {
+    setIsCalling(false);
+  };
 
   const handleNewGame = async () => {
     setIsCalling(false);
@@ -99,6 +102,18 @@ export default function Home() {
         callNextNumber();
     }, 500);
   };
+  
+  React.useEffect(() => {
+    const currentAudio = audioRef.current;
+    if (currentAudio) {
+      const onEnded = () => setIsCalling(false);
+      currentAudio.addEventListener('ended', onEnded);
+      return () => {
+        currentAudio.removeEventListener('ended', onEnded);
+      };
+    }
+  }, [audioRef.current]);
+
 
   const isLoading = isUserLoading || isGameLoading;
   const isGameOver = !isLoading && gameState && gameState.calledNumbers.length >= 90;
@@ -110,7 +125,7 @@ export default function Home() {
         <div className="flex flex-col lg:flex-row gap-8 w-full max-w-7xl mx-auto items-start justify-center mt-8">
           <div className="flex flex-col gap-4 w-full lg:w-96 lg:shrink-0">
             <Skeleton className="h-64 w-full" />
-            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-24 w-full" />
             <Skeleton className="h-24 w-full" />
           </div>
           <Skeleton className="h-[30rem] w-full" />
@@ -128,6 +143,7 @@ export default function Home() {
               isGameOver={isGameOver}
               onNewGame={handleNewGame}
               onNextNumber={handleNextNumber}
+              onPause={handlePause}
             />
              <CalledNumbersHistory calledNumbers={gameState.calledNumbers} />
           </div>
