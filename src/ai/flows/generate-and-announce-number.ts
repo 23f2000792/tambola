@@ -18,13 +18,14 @@ const GenerateAndAnnounceNumberInputSchema = z.object({
   previousNumbers: z
     .array(z.number())
     .describe('The list of previously called numbers.'),
+  numberToAnnounce: z.number().describe('The specific number to generate audio for.'),
 });
 export type GenerateAndAnnounceNumberInput = z.infer<
   typeof GenerateAndAnnounceNumberInputSchema
 >;
 
 const GenerateAndAnnounceNumberOutputSchema = z.object({
-  number: z.number().describe('The randomly generated number.'),
+  number: z.number().describe('The number that was announced.'),
   audio: z.string().describe('The audio data of the announced number.'),
 });
 export type GenerateAndAnnounceNumberOutput = z.infer<
@@ -64,28 +65,6 @@ async function toWav(
   });
 }
 
-const generateNumberTool = ai.defineTool(
-  {
-    name: 'generateNumber',
-    description: 'Generates a random, non-repeating number between 1 and 90.',
-    inputSchema: z.object({
-      previousNumbers: z
-        .array(z.number())
-        .describe('The list of previously called numbers.'),
-    }),
-    outputSchema: z
-      .number()
-      .describe('A random, non-repeating number between 1 and 90.'),
-  },
-  async input => {
-    let number;
-    do {
-      number = Math.floor(Math.random() * 90) + 1;
-    } while (input.previousNumbers.includes(number));
-    return number;
-  }
-);
-
 // Helper function to convert number to words for announcement
 const numberToWordsMap: { [key: number]: string } = {
     0: 'zero', 1: 'one', 2: 'two', 3: 'three', 4: 'four',
@@ -115,20 +94,24 @@ const generateAndAnnounceNumberFlow = ai.defineFlow(
     outputSchema: GenerateAndAnnounceNumberOutputSchema,
   },
   async input => {
-    const number = await generateNumberTool(input);
-
-    const announceText = getAnnouncementText(number);
+    const numberToAnnounce = input.numberToAnnounce;
+    const announceText = getAnnouncementText(numberToAnnounce);
 
     if (!announceText || announceText.trim() === '') {
       console.error('TTS text is empty!');
-      return { number, audio: '' };
+      return { number: numberToAnnounce, audio: '' };
     }
 
     try {
       const {media} = await ai.generate({
-        model: googleAI.model('text-to-speech-1'),
+        model: googleAI.model('gemini-2.5-flash-preview-tts'),
         config: {
           responseModalities: ['AUDIO'],
+          speechConfig: {
+            voiceConfig: {
+                prebuiltVoiceConfig: { voiceName: 'en-US-News-M' },
+            },
+          },
         },
         prompt: announceText,
       });
@@ -144,10 +127,10 @@ const generateAndAnnounceNumberFlow = ai.defineFlow(
 
       const audio = 'data:audio/wav;base64,' + (await toWav(audioBuffer));
 
-      return {number: number, audio: audio};
+      return {number: numberToAnnounce, audio: audio};
     } catch (err) {
       console.error("TTS generation failed:", err);
-      return { number, audio: '' };
+      return { number: numberToAnnounce, audio: '' };
     }
   }
 );

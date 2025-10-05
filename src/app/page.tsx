@@ -16,6 +16,7 @@ import { useAuth, useUser } from '@/firebase';
 import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
 
 const GAME_ID = 'main-game';
+const AUDIO_CACHE_PREFIX = 'tambola-audio-';
 
 export default function Home() {
   const { toast } = useToast();
@@ -31,6 +32,39 @@ export default function Home() {
   const { gameState, updateGame, resetGame, isLoading: isGameLoading } = useTambolaGame(GAME_ID, !!user);
   const [isCalling, setIsCalling] = React.useState(false);
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
+  
+  // Audio Caching Functions
+  const getCachedAudio = (number: number): string | null => {
+    try {
+      return localStorage.getItem(`${AUDIO_CACHE_PREFIX}${number}`);
+    } catch (error) {
+      console.error("Could not access localStorage for audio cache.", error);
+      return null;
+    }
+  };
+
+  const setCachedAudio = (number: number, audioData: string) => {
+    try {
+      localStorage.setItem(`${AUDIO_CACHE_PREFIX}${number}`, audioData);
+    } catch (error) {
+      console.error("Could not write to localStorage for audio cache.", error);
+    }
+  };
+
+  const playAudio = (audioData: string) => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    audioRef.current = new Audio(audioData);
+    const playPromise = audioRef.current.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(error => {
+        console.error("Audio playback failed:", error);
+        setIsCalling(false);
+      });
+    }
+  };
+
 
   const callNextNumber = React.useCallback(async () => {
     if (isCalling || !gameState) return;
@@ -45,39 +79,40 @@ export default function Home() {
     setIsCalling(true);
 
     try {
-      const result = await generateAndAnnounceNumber({
-        previousNumbers: gameState.calledNumbers,
-      });
+      // Generate a new number using a temporary AI call that doesn't do TTS
+      const availableNumbers = Array.from({ length: 90 }, (_, i) => i + 1)
+        .filter(n => !gameState.calledNumbers.includes(n));
+      
+      if (availableNumbers.length === 0) {
+          setIsCalling(false);
+          return;
+      }
 
-      if (result.number) {
-        await updateGame(result.number);
+      const newNumber = availableNumbers[Math.floor(Math.random() * availableNumbers.length)];
+
+      await updateGame(newNumber);
+
+      const cachedAudio = getCachedAudio(newNumber);
+
+      if (cachedAudio) {
+        playAudio(cachedAudio);
+      } else {
+        const result = await generateAndAnnounceNumber({
+          previousNumbers: gameState.calledNumbers, // Pass previous numbers to get the next one
+          numberToAnnounce: newNumber, // Specify which number to announce
+        });
 
         if (result.audio) {
-          if (audioRef.current) {
-            audioRef.current.pause();
-          }
-          audioRef.current = new Audio(result.audio);
-
-          const playPromise = audioRef.current.play();
-          if (playPromise !== undefined) {
-            playPromise.then(_ => {
-              // Audio started playing
-            }).catch(error => {
-              console.error("Audio playback failed:", error);
-              setIsCalling(false);
-            });
-          }
+          setCachedAudio(newNumber, result.audio);
+          playAudio(result.audio);
         } else {
-          // No audio returned, likely a TTS failure, so just end the "calling" state.
-           toast({
+          toast({
             variant: 'destructive',
             title: 'Audio Error',
             description: 'Could not generate audio, but the number is updated.',
           });
           setIsCalling(false);
         }
-      } else {
-        throw new Error('AI did not return a valid number.');
       }
     } catch (error) {
       console.error('Failed to call next number:', error);
@@ -120,10 +155,12 @@ export default function Home() {
       const onEnded = () => setIsCalling(false);
       currentAudio.addEventListener('ended', onEnded);
       return () => {
-        currentAudio.removeEventListener('ended', onEnded);
+        if (currentAudio) {
+            currentAudio.removeEventListener('ended', onEnded);
+        }
       };
     }
-  }, [audioRef.current, isCalling]);
+  }, [isCalling]);
 
 
   const isLoading = isUserLoading || isGameLoading;
