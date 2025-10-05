@@ -2,62 +2,49 @@
  * @fileoverview Firestore Security Rules for Tambola Game.
  *
  * Core Philosophy:
- * This ruleset allows any signed-in user (including anonymous) to read and write game data,
- * with no restrictions based on user roles or ownership.
+ * This ruleset allows public read access to game and called number data while restricting write access.
+ * This approach is suitable given that the application has no concept of roles or ownership beyond anonymous users.
  *
  * Data Structure:
- * - `/tambola_games/{gameId}`: Stores Tambola game session data.
- * - `/tambola_games/{gameId}/called_numbers/{numberId}`: Stores called numbers for each game.
+ * - /tambola_games/{gameId}: Stores Tambola game sessions.
+ * - /tambola_games/{gameId}/called_numbers/{numberId}: Stores numbers called during a game.
  *
  * Key Security Decisions:
- * - Public read and write access for signed-in users.
- * - No ownership or role-based access control.
- * - List operations are allowed for any signed-in user.
- *
- * Denormalization for Authorization:
- * Not required, as all signed-in users have equal access.
- *
- * Structural Segregation:
- * Not applicable, as there is no concept of public vs. private data.
+ * - Public read access for all game data.
+ * - No write access granted to any client.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Checks if the user is signed in (including anonymous users).
-     * @return {bool} True if the user is signed in, false otherwise.
-     */
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    /**
-     * @description Rules for the /tambola_games/{gameId} collection.
+     * @description Allows public read access to Tambola game sessions.  No write access is granted.
      * @path /tambola_games/{gameId}
-     * @allow (create) - Any signed-in user can create a new game.
-     * @allow (get) - Any signed-in user can read a game.
-     * @allow (update) - Any signed-in user can update a game.
-     * @allow (delete) - Any signed-in user can delete a game.
-     * @deny (create) - An unauthenticated user cannot create a new game.
-     * @principle Allows any signed-in user to manage game data.
+     * @allow (get, list) - Any user can read game session data.
+     * @deny (create, update, delete) - No user can create, update, or delete game session data.
+     * @principle Allows public read access with no write access.
      */
     match /tambola_games/{gameId} {
-      allow read, write: if isSignedIn();
+      allow get: if true;
+      allow list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
 
     /**
-     * @description Rules for the /tambola_games/{gameId}/called_numbers/{numberId} collection.
+     * @description Allows public read access to called numbers within a Tambola game. No write access is granted.
      * @path /tambola_games/{gameId}/called_numbers/{numberId}
-     * @allow (create) - Any signed-in user can add a called number.
-     * @allow (get) - Any signed-in user can read a called number.
-     * @allow (update) - Any signed-in user can update a called number.
-     * @allow (delete) - Any signed-in user can delete a called number.
-     * @deny (create) - An unauthenticated user cannot add a called number.
-     * @principle Allows any signed-in user to manage called numbers.
+     * @allow (get, list) - Any user can read called number data.
+     * @deny (create, update, delete) - No user can create, update, or delete called number data.
+     * @principle Allows public read access with no write access.
      */
     match /tambola_games/{gameId}/called_numbers/{numberId} {
-      allow read, write: if isSignedIn();
+      allow get: if true;
+      allow list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
   }
 }
