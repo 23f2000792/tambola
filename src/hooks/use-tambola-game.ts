@@ -1,9 +1,10 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { useToast } from './use-toast';
-import { useFirestore } from '@/firebase';
+import { useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 
 interface GameState {
   calledNumbers: number[];
@@ -45,24 +46,23 @@ export function useTambolaGame(gameId: string) {
         } else {
           // Document doesn't exist, create it with initial state
           setDoc(gameDocRef, initialState).catch(err => {
-            console.error("Failed to create initial game document:", err);
-            toast({
-              variant: "destructive",
-              title: "Firestore Error",
-              description: "Could not create a new game session.",
-            });
+              const permissionError = new FirestorePermissionError({
+                path: gameDocRef.path,
+                operation: 'create',
+                requestResourceData: initialState,
+              });
+              errorEmitter.emit('permission-error', permissionError);
           });
           setGameState(initialState);
         }
         setIsLoading(false);
       },
       (error) => {
-        console.error("Firestore snapshot error:", error);
-        toast({
-          variant: "destructive",
-          title: "Connection Error",
-          description: "Could not connect to the game session. Please check your internet connection.",
+        const permissionError = new FirestorePermissionError({
+            path: gameDocRef.path,
+            operation: 'get',
         });
+        errorEmitter.emit('permission-error', permissionError);
         setIsLoading(false);
       }
     );
@@ -76,37 +76,34 @@ export function useTambolaGame(gameId: string) {
 
     const gameDocRef = doc(firestore, 'tambolaGames', gameId);
     const newCalledNumbers = [...gameState.calledNumbers, newNumber];
+    const newState = {
+        calledNumbers: newCalledNumbers,
+        currentNumber: newNumber,
+    };
     
-    try {
-        await setDoc(gameDocRef, {
-            calledNumbers: newCalledNumbers,
-            currentNumber: newNumber,
-        }, { merge: true });
-    } catch(error) {
-        console.error("Failed to update game state:", error);
-        toast({
-            variant: "destructive",
-            title: "Sync Error",
-            description: "Failed to save the last number. The game might be out of sync.",
+    setDoc(gameDocRef, newState, { merge: true }).catch(error => {
+        const permissionError = new FirestorePermissionError({
+            path: gameDocRef.path,
+            operation: 'update',
+            requestResourceData: newState,
         });
-    }
-  }, [gameId, gameState.calledNumbers, toast, firestore]);
+        errorEmitter.emit('permission-error', permissionError);
+    });
+  }, [gameId, gameState.calledNumbers, firestore]);
 
   const resetGame = useCallback(async () => {
     if (!gameId || !firestore) return;
 
     const gameDocRef = doc(firestore, 'tambolaGames', gameId);
-    try {
-        await setDoc(gameDocRef, initialState);
-    } catch (error) {
-        console.error("Failed to reset game state:", error);
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Could not start a new game. Please try again.",
+    setDoc(gameDocRef, initialState).catch(error => {
+        const permissionError = new FirestorePermissionError({
+            path: gameDocRef.path,
+            operation: 'write',
+            requestResourceData: initialState,
         });
-    }
-  }, [gameId, toast, firestore]);
+        errorEmitter.emit('permission-error', permissionError);
+    });
+  }, [gameId, firestore]);
 
   return { gameState, updateGame, resetGame, isLoading };
 }
