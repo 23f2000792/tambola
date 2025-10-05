@@ -1,62 +1,56 @@
 /**
  * @file Overview
- * This ruleset allows public read access to Tambola games and their called numbers,
- * but restricts write access (create, update, delete) to authenticated users.
- * It leverages Firebase Authentication's anonymous sign-in feature for user identification.
+ * This ruleset enforces signed-in access to Tambola game data.
  *
- * @dataStructure
- * - /tambola_games/{gameId}: Contains documents representing individual Tambola game sessions.
- * - /tambola_games/{gameId}/called_numbers/{numberId}: Subcollection containing the numbers called in each game.
+ * Data Structure:
+ * - /tambolaGames/{gameId}: Stores individual Tambola game sessions.
+ * - /tambolaGames/{gameId}/called_numbers/{numberId}: Stores the numbers called in each game.
  *
- * @keySecurityDecisions
- * - Public read access is granted to both game sessions and called numbers to allow real-time updates
- *   without requiring users to log in.
- * - Write access is restricted to authenticated users only to prevent unauthorized modification of the game state.
- * - No listing restrictions are imposed on authenticated users (isSignedIn).
- *
- * @denormalizationForAuthorization
- * Not applicable. The rules use isSignedIn() which depends on the request auth state. No data denormalization is needed.
- *
- * @structuralSegregation
- * Not applicable. The data is not separated into public and private collections.
+ * Key Security Decisions:
+ * - All read and write access requires the user to be signed in (either anonymously or with a custom token).
+ * - No specific data validation is performed in this prototype.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * @description Checks if the user is signed in (not anonymous).
-     * @return {boolean} True if the user is signed in, false otherwise.
-     * @example isSignedIn() == true
-     */
+    // Helper function to check if the user is signed in.
     function isSignedIn() {
       return request.auth != null;
     }
 
     /**
-     * @description Grants public read access but restricts writes to authenticated users for Tambola games.
-     * @path /tambola_games/{gameId}
-     * @allow (get, list) Any user can read game information.
-     * @allow (create, update, delete) An authenticated user (isSignedIn() == true) can modify game information.
-     * @deny (create, update, delete) An unauthenticated user (isSignedIn() == false) cannot modify game information.
-     * @principle Allows public read access while protecting writes with authentication.
+     * @description Controls access to individual Tambola game sessions.
+     * @path /tambolaGames/{gameId}
+     * @allow (get, list) Signed-in user can read game data.
+     * @allow (create, update, delete) Signed-in user can modify game data.
+     * @deny (get, list) Anonymous user cannot read if not signed in.
+     * @deny (create, update, delete) Anonymous user cannot modify if not signed in.
+     * @principle Requires authentication for all operations.
      */
-    match /tambola_games/{gameId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
+    match /tambolaGames/{gameId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     /**
-     * @description Grants public read access but restricts writes to authenticated users for called numbers within a Tambola game.
-     * @path /tambola_games/{gameId}/called_numbers/{numberId}
-     * @allow (get, list) Any user can read called numbers.
-     * @allow (create, update, delete) An authenticated user (isSignedIn() == true) can add/modify called numbers.
-     * @deny (create, update, delete) An unauthenticated user (isSignedIn() == false) cannot modify called numbers.
-     * @principle Allows public read access while protecting writes with authentication.
+     * @description Controls access to the called numbers within a specific Tambola game.
+     * @path /tambolaGames/{gameId}/called_numbers/{numberId}
+     * @allow (get, list) Signed-in user can read called numbers.
+     * @allow (create, update, delete) Signed-in user can modify called numbers.
+     * @deny (get, list) Anonymous user cannot read if not signed in.
+     * @deny (create, update, delete) Anonymous user cannot modify if not signed in.
+     * @principle Requires authentication for all operations.
      */
-    match /tambola_games/{gameId}/called_numbers/{numberId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
+    match /tambolaGames/{gameId}/called_numbers/{numberId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
   }
 }
