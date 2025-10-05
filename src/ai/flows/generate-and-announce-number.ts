@@ -60,7 +60,7 @@ async function toWav(
   });
 }
 
-const generateNumber = ai.defineTool({
+const generateNumberTool = ai.defineTool({
   name: 'generateNumber',
   description: 'Generates a random, non-repeating number between 1 and 90.',
   inputSchema: z.object({
@@ -85,8 +85,10 @@ const announceNumberPrompt = ai.definePrompt({
   input: z.object({
     number: z.number().describe('The number to announce.'),
   }),
-  output: z.string().describe('The audio data of the announced number.'),
-  prompt: `Announce the number {{number}}.`,
+  prompt: `You are a Tambola (Bingo) caller. Announce the number in a fun and descriptive way.
+For single-digit numbers, say "Only number X".
+For two-digit numbers, say the digits individually and then the full number. For example, for 21, say "Two One, Twenty-One".
+Number to call: {{number}}`,
 });
 
 const generateAndAnnounceNumberFlow = ai.defineFlow(
@@ -96,7 +98,10 @@ const generateAndAnnounceNumberFlow = ai.defineFlow(
     outputSchema: GenerateAndAnnounceNumberOutputSchema,
   },
   async input => {
-    const number = await generateNumber(input);
+    const number = await generateNumberTool(input);
+
+    const announceText = await (await announceNumberPrompt({number})).text();
+
     const { media } = await ai.generate({
       model: 'googleai/gemini-2.5-flash-preview-tts',
       config: {
@@ -107,7 +112,7 @@ const generateAndAnnounceNumberFlow = ai.defineFlow(
           },
         },
       },
-      prompt: number.toString(),
+      prompt: announceText,
     });
 
     if (!media) {

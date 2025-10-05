@@ -1,6 +1,6 @@
 "use client";
 
-import { Play, Pause, RefreshCw } from "lucide-react";
+import { Play, Pause, RefreshCw, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -20,6 +20,7 @@ type GameControlsProps = {
   onStart: () => void;
   onPause: () => void;
   onNewGame: () => void;
+  onNextNumber: () => void;
 };
 
 export default function GameControls({
@@ -28,6 +29,7 @@ export default function GameControls({
   onStart,
   onPause,
   onNewGame,
+  onNextNumber,
 }: GameControlsProps) {
   return (
     <div className="grid grid-cols-2 gap-4">
@@ -42,9 +44,18 @@ export default function GameControls({
           disabled={isGameOver}
           className="col-span-2 text-lg h-14"
         >
-          <Play className="mr-2 h-6 w-6" /> {isGameOver ? "Game Over" : "Start"}
+          <Play className="mr-2 h-6 w-6" /> {isGameOver ? "Game Over" : "Start Auto-Play"}
         </Button>
       )}
+      
+      <Button 
+        variant="secondary" 
+        onClick={onNextNumber} 
+        disabled={isGameRunning || isGameOver}
+        className="text-md h-12 col-span-2"
+      >
+        <ChevronRight className="mr-2 h-5 w-5" /> Next Number
+      </Button>
 
       <AlertDialog>
         <AlertDialogTrigger asChild>

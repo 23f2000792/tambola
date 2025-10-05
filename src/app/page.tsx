@@ -81,6 +81,12 @@ export default function Home() {
     setIsGameRunning(true);
     callNextNumber();
   };
+  
+  const handleNextNumber = () => {
+    if (!isGameRunning) {
+      callNextNumber();
+    }
+  }
 
   const handlePause = () => {
     setIsGameRunning(false);
@@ -93,6 +99,8 @@ export default function Home() {
       title: 'New Game Started',
       description: 'The board has been cleared.',
     });
+    // Call the first number
+    callNextNumber();
   };
 
   const isGameOver = gameState.calledNumbers.length >= 90;
@@ -121,6 +129,7 @@ export default function Home() {
               onStart={handleStart}
               onPause={handlePause}
               onNewGame={handleNewGame}
+              onNextNumber={handleNextNumber}
             />
           </div>
           <TambolaBoard
