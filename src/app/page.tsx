@@ -35,22 +35,6 @@ export default function Home() {
   const { gameState, updateGame, resetGame, isLoading: isGameLoading } = useTambolaGame(GAME_ID, !!user);
   const [isCalling, setIsCalling] = React.useState(false);
   
-  const playAudio = (audioDataUri: string) => {
-    if (audioRef.current) {
-        audioRef.current.pause();
-    }
-    const audio = new Audio(audioDataUri);
-    audioRef.current = audio;
-    audio.play();
-
-    return new Promise((resolve) => {
-      audio.onended = () => {
-        audioRef.current = null;
-        resolve(null);
-      };
-    });
-  };
-  
   const callNextNumber = React.useCallback(async () => {
     if (isCalling || !gameState) return;
     if (gameState.calledNumbers.length >= 90) {
@@ -83,11 +67,25 @@ export default function Home() {
         if (generatedAudio) {
             audioDataUri = generatedAudio;
             audioCache.set(newNumber, audioDataUri);
+        } else {
+           toast({
+                variant: 'destructive',
+                title: 'Audio Error',
+                description: 'Could not generate audio.',
+            });
         }
       }
       
       if (audioDataUri) {
-        await playAudio(audioDataUri);
+         if (audioRef.current) {
+            audioRef.current.pause();
+        }
+        const audio = new Audio(audioDataUri);
+        audioRef.current = audio;
+        audio.play();
+        audio.onended = () => setIsCalling(false);
+      } else {
+        setIsCalling(false);
       }
 
     } catch (error) {
@@ -95,9 +93,8 @@ export default function Home() {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Could not generate the next number.',
+        description: 'Could not call the next number.',
       });
-    } finally {
       setIsCalling(false);
     }
   }, [isCalling, gameState, toast, updateGame]);
