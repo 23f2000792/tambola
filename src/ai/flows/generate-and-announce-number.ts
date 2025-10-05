@@ -109,30 +109,42 @@ const generateAndAnnounceNumberFlow = ai.defineFlow(
 
     const announceText = (await announceNumberPrompt({number})).text;
 
-    const {media} = await ai.generate({
-      model: googleAI.model('gemini-2.5-flash-preview-tts'),
-      config: {
-        responseModalities: ['AUDIO'],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: {voiceName: 'Algenib'},
-          },
-        },
-      },
-      prompt: announceText,
-    });
-
-    if (!media) {
-      throw new Error('no media returned');
+    if (!announceText || announceText.trim() === '') {
+      console.error('TTS text is empty!');
+      throw new Error('Cannot generate audio from empty text.');
     }
 
-    const audioBuffer = Buffer.from(
-      media.url.substring(media.url.indexOf(',') + 1),
-      'base64'
-    );
+    try {
+      const {media} = await ai.generate({
+        model: googleAI.model('text-to-speech-1'),
+        config: {
+          responseModalities: ['AUDIO'],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: {voiceName: 'Algenib'},
+            },
+          },
+        },
+        prompt: announceText,
+      });
 
-    const audio = 'data:audio/wav;base64,' + (await toWav(audioBuffer));
+      if (!media || !media.url) {
+        throw new Error('no media returned from TTS service');
+      }
 
-    return {number: number, audio: audio};
+      const audioBuffer = Buffer.from(
+        media.url.substring(media.url.indexOf(',') + 1),
+        'base64'
+      );
+
+      const audio = 'data:audio/wav;base64,' + (await toWav(audioBuffer));
+
+      return {number: number, audio: audio};
+    } catch (err) {
+      console.error("TTS generation failed:", err);
+      // As a fallback, we can return the number with no audio.
+      // The frontend can handle this by just displaying the number.
+      return { number, audio: '' };
+    }
   }
 );

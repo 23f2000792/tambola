@@ -49,25 +49,35 @@ export default function Home() {
         previousNumbers: gameState.calledNumbers,
       });
 
-      if (result.number && result.audio) {
+      if (result.number) {
         await updateGame(result.number);
 
-        if (audioRef.current) {
-          audioRef.current.pause();
-        }
-        audioRef.current = new Audio(result.audio);
+        if (result.audio) {
+          if (audioRef.current) {
+            audioRef.current.pause();
+          }
+          audioRef.current = new Audio(result.audio);
 
-        const playPromise = audioRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise.then(_ => {
-            // Audio started playing
-          }).catch(error => {
-            console.error("Audio playback failed:", error);
-            setIsCalling(false);
+          const playPromise = audioRef.current.play();
+          if (playPromise !== undefined) {
+            playPromise.then(_ => {
+              // Audio started playing
+            }).catch(error => {
+              console.error("Audio playback failed:", error);
+              setIsCalling(false);
+            });
+          }
+        } else {
+          // No audio returned, likely a TTS failure, so just end the "calling" state.
+           toast({
+            variant: 'destructive',
+            title: 'Audio Error',
+            description: 'Could not generate audio, but the number is updated.',
           });
+          setIsCalling(false);
         }
       } else {
-        throw new Error('AI did not return a valid number or audio.');
+        throw new Error('AI did not return a valid number.');
       }
     } catch (error) {
       console.error('Failed to call next number:', error);
