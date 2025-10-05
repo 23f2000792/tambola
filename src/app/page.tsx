@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from 'react';
-import { generateAndAnnounceNumber } from '@/ai/flows/generate-and-announce-number';
+import { generateAudio } from '@/ai/flows/generate-audio-direct';
 import type { GenerateAudioInput } from '@/ai/schemas/generate-audio-schema';
 import { useToast } from '@/hooks/use-toast';
 import { useTambolaGame } from '@/hooks/use-tambola-game';
@@ -98,7 +98,7 @@ export default function Home() {
       if (cachedAudio) {
         playAudio(cachedAudio);
       } else {
-        const result = await generateAndAnnounceNumber({
+        const result = await generateAudio({
           numberToAnnounce: newNumber,
         } satisfies GenerateAudioInput);
 
