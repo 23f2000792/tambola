@@ -11,6 +11,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'zod';
 import wav from 'wav';
+import { googleAI } from '@genkit-ai/google-genai';
 
 const GenerateAndAnnounceNumberInputSchema = z.object({
   previousNumbers: z
@@ -109,7 +110,7 @@ const generateAndAnnounceNumberFlow = ai.defineFlow(
     const announceText = (await announceNumberPrompt({number})).text;
 
     const {media} = await ai.generate({
-      model: 'googleai/gemini-2.5-flash-preview-tts',
+      model: googleAI.model('gemini-2.5-flash-preview-tts'),
       config: {
         responseModalities: ['AUDIO'],
         speechConfig: {
