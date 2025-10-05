@@ -13,13 +13,18 @@ import { Skeleton } from '@/components/ui/skeleton';
 import CalledNumbersHistory from '@/components/tambola/called-numbers-history';
 import { useAuth, useUser } from '@/firebase';
 import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
+import { generateAnnouncementAudio } from '@/ai/flows/generate-announcement-audio';
 
 const GAME_ID = 'main-game';
+
+// Simple in-memory cache for audio
+const audioCache = new Map<number, string>();
 
 export default function Home() {
   const { toast } = useToast();
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
+  const audioRef = React.useRef<HTMLAudioElement | null>(null);
 
   React.useEffect(() => {
     if (auth && !user && !isUserLoading) {
@@ -29,6 +34,22 @@ export default function Home() {
 
   const { gameState, updateGame, resetGame, isLoading: isGameLoading } = useTambolaGame(GAME_ID, !!user);
   const [isCalling, setIsCalling] = React.useState(false);
+  
+  const playAudio = (audioDataUri: string) => {
+    if (audioRef.current) {
+        audioRef.current.pause();
+    }
+    const audio = new Audio(audioDataUri);
+    audioRef.current = audio;
+    audio.play();
+
+    return new Promise((resolve) => {
+      audio.onended = () => {
+        audioRef.current = null;
+        resolve(null);
+      };
+    });
+  };
   
   const callNextNumber = React.useCallback(async () => {
     if (isCalling || !gameState) return;
@@ -43,7 +64,6 @@ export default function Home() {
     setIsCalling(true);
 
     try {
-      // Generate a new number
       const availableNumbers = Array.from({ length: 90 }, (_, i) => i + 1)
         .filter(n => !gameState.calledNumbers.includes(n));
       
@@ -53,8 +73,22 @@ export default function Home() {
       }
 
       const newNumber = availableNumbers[Math.floor(Math.random() * availableNumbers.length)];
-
+      
       await updateGame(newNumber);
+      
+      let audioDataUri = audioCache.get(newNumber);
+
+      if (!audioDataUri) {
+        const generatedAudio = await generateAnnouncementAudio(newNumber);
+        if (generatedAudio) {
+            audioDataUri = generatedAudio;
+            audioCache.set(newNumber, audioDataUri);
+        }
+      }
+      
+      if (audioDataUri) {
+        await playAudio(audioDataUri);
+      }
 
     } catch (error) {
       console.error('Failed to call next number:', error);
@@ -64,8 +98,7 @@ export default function Home() {
         description: 'Could not generate the next number.',
       });
     } finally {
-      // Use a short delay to simulate announcement time
-      setTimeout(() => setIsCalling(false), 500);
+      setIsCalling(false);
     }
   }, [isCalling, gameState, toast, updateGame]);
 
@@ -74,13 +107,14 @@ export default function Home() {
   };
   
   const handlePause = () => {
-    // Since there's no long-running audio, pause is less critical, 
-    // but we can stop any visual indicators.
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
     setIsCalling(false);
   };
 
   const handleNewGame = async () => {
-    setIsCalling(false);
+    handlePause();
     await resetGame();
     toast({
       title: 'New Game Started',
