@@ -13,7 +13,9 @@ import {z} from 'zod';
 import wav from 'wav';
 
 const GenerateAndAnnounceNumberInputSchema = z.object({
-  previousNumbers: z.array(z.number()).describe('The list of previously called numbers.'),
+  previousNumbers: z
+    .array(z.number())
+    .describe('The list of previously called numbers.'),
 });
 export type GenerateAndAnnounceNumberInput = z.infer<
   typeof GenerateAndAnnounceNumberInputSchema
@@ -60,17 +62,20 @@ async function toWav(
   });
 }
 
-const generateNumberTool = ai.defineTool({
-  name: 'generateNumber',
-  description: 'Generates a random, non-repeating number between 1 and 90.',
-  inputSchema: z.object({
-    previousNumbers: z
-      .array(z.number())
-      .describe('The list of previously called numbers.'),
-  }),
-  outputSchema: z.number().describe('A random, non-repeating number between 1 and 90.'),
-},
-async (input) => {
+const generateNumberTool = ai.defineTool(
+  {
+    name: 'generateNumber',
+    description: 'Generates a random, non-repeating number between 1 and 90.',
+    inputSchema: z.object({
+      previousNumbers: z
+        .array(z.number())
+        .describe('The list of previously called numbers.'),
+    }),
+    outputSchema: z
+      .number()
+      .describe('A random, non-repeating number between 1 and 90.'),
+  },
+  async input => {
     let number;
     do {
       number = Math.floor(Math.random() * 90) + 1;
@@ -79,12 +84,13 @@ async (input) => {
   }
 );
 
-
 const announceNumberPrompt = ai.definePrompt({
   name: 'announceNumberPrompt',
-  input: {schema: z.object({
-    number: z.number().describe('The number to announce.'),
-  })},
+  input: {
+    schema: z.object({
+      number: z.number().describe('The number to announce.'),
+    }),
+  },
   prompt: `You are a Tambola (Bingo) caller. Announce the number exactly as instructed. Do not add any extra words or pleasantries.
 - For single-digit numbers, say "Only number X".
 - For two-digit numbers, say the digits individually and then the full number. For example, for 21, say "Two One, Twenty-One".
@@ -102,13 +108,13 @@ const generateAndAnnounceNumberFlow = ai.defineFlow(
 
     const announceText = (await announceNumberPrompt({number})).text;
 
-    const { media } = await ai.generate({
+    const {media} = await ai.generate({
       model: 'googleai/gemini-2.5-flash-preview-tts',
       config: {
         responseModalities: ['AUDIO'],
         speechConfig: {
           voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: 'Algenib' },
+            prebuiltVoiceConfig: {voiceName: 'Algenib'},
           },
         },
       },
