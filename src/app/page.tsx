@@ -12,28 +12,24 @@ import CurrentDisplay from '@/components/tambola/current-display';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const GAME_ID = 'main-game';
-const CALL_INTERVAL_MS = 5000; // 5 seconds between numbers
 
 export default function Home() {
   const { toast } = useToast();
   const { gameState, updateGame, resetGame, isLoading } = useTambolaGame(GAME_ID);
-  const [isGameRunning, setIsGameRunning] = React.useState(false);
-  const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
+  const [isCalling, setIsCalling] = React.useState(false);
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
-  const isCallingNumberRef = React.useRef(false);
 
   const callNextNumber = React.useCallback(async () => {
-    if (isCallingNumberRef.current) return;
+    if (isCalling) return;
     if (gameState.calledNumbers.length >= 90) {
-      setIsGameRunning(false);
       toast({
         title: 'Game Over!',
         description: 'All numbers have been called.',
       });
       return;
     }
-    
-    isCallingNumberRef.current = true;
+
+    setIsCalling(true);
 
     try {
       const result = await generateAndAnnounceNumber({
@@ -47,7 +43,21 @@ export default function Home() {
           audioRef.current.pause();
         }
         audioRef.current = new Audio(result.audio);
-        await audioRef.current.play();
+
+        const playPromise = audioRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.then(_ => {
+            // Automatic playback started!
+            // We can add a listener for when the audio finishes.
+            audioRef.current?.addEventListener('ended', () => {
+              setIsCalling(false);
+            });
+          }).catch(error => {
+            console.error("Audio playback failed:", error);
+            // If autoplay fails, we should also reset the state.
+            setIsCalling(false);
+          });
+        }
       } else {
         throw new Error('AI did not return a valid number or audio.');
       }
@@ -56,51 +66,30 @@ export default function Home() {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Could not generate the next number. Pausing game.',
+        description: 'Could not generate the next number.',
       });
-      setIsGameRunning(false);
-    } finally {
-        isCallingNumberRef.current = false;
+      setIsCalling(false);
     }
-  }, [gameState.calledNumbers, toast, updateGame]);
+  }, [isCalling, gameState.calledNumbers, toast, updateGame]);
 
-  React.useEffect(() => {
-    if (isGameRunning) {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      intervalRef.current = setInterval(callNextNumber, CALL_INTERVAL_MS);
-    } else {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    }
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [isGameRunning, callNextNumber]);
-  
-  const handleStart = () => {
-    setIsGameRunning(true);
+  const handleNextNumber = () => {
     callNextNumber();
   };
-  
-  const handleNextNumber = () => {
-    if (!isGameRunning) {
-      callNextNumber();
-    }
-  }
 
-  const handlePause = () => {
-    setIsGameRunning(false);
-  };
-  
   const handleNewGame = async () => {
-    setIsGameRunning(false);
+    setIsCalling(false);
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
     await resetGame();
     toast({
       title: 'New Game Started',
-      description: 'The board has been cleared.',
+      description: 'The board has been cleared. The first number will be called now.',
     });
-    // Call the first number
-    callNextNumber();
+    // Use a short delay to allow the toast to be seen before the first number is called
+    setTimeout(() => {
+        callNextNumber();
+    }, 500);
   };
 
   const isGameOver = gameState.calledNumbers.length >= 90;
@@ -110,11 +99,11 @@ export default function Home() {
       <GameHeader />
       {isLoading ? (
         <div className="flex flex-col lg:flex-row gap-8 w-full max-w-7xl mx-auto items-start justify-center mt-8">
-            <div className="flex flex-col gap-4 w-full lg:w-96 lg:shrink-0">
-                <Skeleton className="h-64 w-full" />
-                <Skeleton className="h-12 w-full" />
-            </div>
-            <Skeleton className="h-[30rem] w-full" />
+          <div className="flex flex-col gap-4 w-full lg:w-96 lg:shrink-0">
+            <Skeleton className="h-64 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+          <Skeleton className="h-[30rem] w-full" />
         </div>
       ) : (
         <main className="flex flex-col lg:flex-row gap-4 md:gap-8 w-full max-w-7xl mx-auto items-start justify-center mt-4 sm:mt-8">
@@ -122,12 +111,13 @@ export default function Home() {
             <CurrentDisplay
               currentNumber={gameState.currentNumber}
               calledNumbers={gameState.calledNumbers}
+              isCalling={isCalling}
             />
             <GameControls
-              isGameRunning={isGameRunning}
+              isGameRunning={isCalling} // Use isCalling instead of isGameRunning
               isGameOver={isGameOver}
-              onStart={handleStart}
-              onPause={handlePause}
+              onStart={() => {}} // Remove start/pause functionality
+              onPause={() => {}}
               onNewGame={handleNewGame}
               onNextNumber={handleNextNumber}
             />

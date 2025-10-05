@@ -6,9 +6,10 @@ import { Badge } from "@/components/ui/badge";
 type CurrentDisplayProps = {
   currentNumber: number | null;
   calledNumbers: number[];
+  isCalling: boolean;
 };
 
-export default function CurrentDisplay({ currentNumber, calledNumbers }: CurrentDisplayProps) {
+export default function CurrentDisplay({ currentNumber, calledNumbers, isCalling }: CurrentDisplayProps) {
   const previousNumbers = [...calledNumbers].reverse().slice(1, 6);
 
   return (
@@ -25,22 +26,28 @@ export default function CurrentDisplay({ currentNumber, calledNumbers }: Current
           </div>
         </div>
         <div className="h-10">
-          <p className="text-sm text-muted-foreground mb-2">Last 5 numbers:</p>
-          <div className="flex justify-center gap-2">
-            {previousNumbers.length > 0 ? (
-              previousNumbers.map((num, index) => (
-                <Badge
-                  key={index}
-                  variant="secondary"
-                  className="text-lg"
-                >
-                  {num}
-                </Badge>
-              ))
+            {isCalling ? (
+                <p className="text-sm text-primary animate-pulse">Announcing number...</p>
             ) : (
-              <span className="text-sm text-muted-foreground">-</span>
+                <>
+                <p className="text-sm text-muted-foreground mb-2">Last 5 numbers:</p>
+                <div className="flex justify-center gap-2">
+                    {previousNumbers.length > 0 ? (
+                    previousNumbers.map((num, index) => (
+                        <Badge
+                        key={index}
+                        variant="secondary"
+                        className="text-lg"
+                        >
+                        {num}
+                        </Badge>
+                    ))
+                    ) : (
+                    <span className="text-sm text-muted-foreground">-</span>
+                    )}
+                </div>
+                </>
             )}
-          </div>
         </div>
       </CardContent>
     </Card>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Play, Pause, RefreshCw, ChevronRight } from "lucide-react";
+import { RefreshCw, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -17,8 +17,8 @@ import {
 type GameControlsProps = {
   isGameRunning: boolean;
   isGameOver: boolean;
-  onStart: () => void;
-  onPause: () => void;
+  onStart: () => void; // Kept for prop consistency, but unused
+  onPause: () => void; // Kept for prop consistency, but unused
   onNewGame: () => void;
   onNextNumber: () => void;
 };
@@ -26,40 +26,32 @@ type GameControlsProps = {
 export default function GameControls({
   isGameRunning,
   isGameOver,
-  onStart,
-  onPause,
   onNewGame,
   onNextNumber,
 }: GameControlsProps) {
   return (
     <div className="grid grid-cols-2 gap-4">
-      {isGameRunning ? (
-        <Button size="lg" onClick={onPause} className="col-span-2 text-lg h-14">
-          <Pause className="mr-2 h-6 w-6" /> Pause
-        </Button>
-      ) : (
-        <Button
-          size="lg"
-          onClick={onStart}
-          disabled={isGameOver}
-          className="col-span-2 text-lg h-14"
-        >
-          <Play className="mr-2 h-6 w-6" /> {isGameOver ? "Game Over" : "Start Auto-Play"}
-        </Button>
-      )}
-      
-      <Button 
-        variant="secondary" 
-        onClick={onNextNumber} 
+      <Button
+        variant="default"
+        size="lg"
+        onClick={onNextNumber}
         disabled={isGameRunning || isGameOver}
-        className="text-md h-12 col-span-2"
+        className="text-lg h-14 col-span-2"
       >
-        <ChevronRight className="mr-2 h-5 w-5" /> Next Number
+        {isGameRunning ? (
+          <>
+            <Loader2 className="mr-2 h-6 w-6 animate-spin" /> Calling...
+          </>
+        ) : (
+          <>
+            <ChevronRight className="mr-2 h-6 w-6" /> {isGameOver ? "Game Over" : "Next Number"}
+          </>
+        )}
       </Button>
 
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <Button variant="outline" className="col-span-2 h-12">
+          <Button variant="outline" className="col-span-2 h-12" disabled={isGameRunning}>
             <RefreshCw className="mr-2 h-4 w-4" /> New Game
           </Button>
         </AlertDialogTrigger>
@@ -67,7 +59,8 @@ export default function GameControls({
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will start a new game and reset the board for everyone. This action cannot be undone.
+              This will start a new game and reset the board for everyone. This
+              action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
