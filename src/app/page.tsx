@@ -114,10 +114,8 @@ export default function Home() {
               isCalling={isCalling}
             />
             <GameControls
-              isGameRunning={isCalling} // Use isCalling instead of isGameRunning
+              isGameRunning={isCalling}
               isGameOver={isGameOver}
-              onStart={() => {}} // Remove start/pause functionality
-              onPause={() => {}}
               onNewGame={handleNewGame}
               onNextNumber={handleNextNumber}
             />

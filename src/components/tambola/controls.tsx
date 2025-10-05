@@ -17,8 +17,6 @@ import {
 type GameControlsProps = {
   isGameRunning: boolean;
   isGameOver: boolean;
-  onStart: () => void; // Kept for prop consistency, but unused
-  onPause: () => void; // Kept for prop consistency, but unused
   onNewGame: () => void;
   onNextNumber: () => void;
 };

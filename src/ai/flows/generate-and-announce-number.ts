@@ -9,7 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z} from 'zod';
 import wav from 'wav';
 
 const GenerateAndAnnounceNumberInputSchema = z.object({
@@ -85,9 +85,9 @@ const announceNumberPrompt = ai.definePrompt({
   input: {schema: z.object({
     number: z.number().describe('The number to announce.'),
   })},
-  prompt: `You are a Tambola (Bingo) caller. Announce the number in a fun and descriptive way.
-For single-digit numbers, say "Only number X".
-For two-digit numbers, say the digits individually and then the full number. For example, for 21, say "Two One, Twenty-One".
+  prompt: `You are a Tambola (Bingo) caller. Announce the number exactly as instructed. Do not add any extra words or pleasantries.
+- For single-digit numbers, say "Only number X".
+- For two-digit numbers, say the digits individually and then the full number. For example, for 21, say "Two One, Twenty-One".
 Number to call: {{number}}`,
 });
 
