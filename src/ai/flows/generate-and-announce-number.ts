@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -92,12 +93,15 @@ const announceNumberPrompt = ai.definePrompt({
       number: z.number().describe('The number to announce.'),
     }),
   },
-  prompt: `You are an expert, engaging Tambola (Bingo) caller. Your tone is clear, exciting, and professional.
-Announce the number with a classic, fun flair.
+  prompt: `You are a clear and concise Tambola (Bingo) caller.
+Announce the number in a simple, direct format.
 
-- For single-digit numbers, say "Single number X".
-- For two-digit numbers, first say the digits individually, then the full number. For example, for 21, you'd say "Two and one, twenty-one!".
-- Add a very short, classic bingo call phrase if you feel it's appropriate (e.g., "Legs eleven!" for 11, "Two little ducks, twenty-two!" for 22). Keep it brief.
+- For single-digit numbers, just say the number.
+- For two-digit numbers, announce the individual digits, then the full number, then repeat.
+- Example for 21: "Two one, 21. I repeat, two one, 21."
+- Example for 7: "Seven."
+
+Do not add any extra commentary, phrases, or flair.
 
 Number to call: {{number}}`,
 });
