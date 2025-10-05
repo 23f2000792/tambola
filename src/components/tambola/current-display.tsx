@@ -27,7 +27,7 @@ export default function CurrentDisplay({ currentNumber, calledNumbers, isCalling
         </div>
         <div className="h-10">
             {isCalling ? (
-                <p className="text-sm text-primary animate-pulse">Announcing number...</p>
+                <p className="text-sm text-primary animate-pulse">Calling number...</p>
             ) : (
                 <>
                 <p className="text-sm text-muted-foreground mb-2">Last 5 numbers:</p>

@@ -2,8 +2,6 @@
 "use client";
 
 import * as React from 'react';
-import { generateAudio } from '@/ai/flows/generate-audio-direct';
-import type { GenerateAudioInput } from '@/ai/schemas/generate-audio-schema';
 import { useToast } from '@/hooks/use-toast';
 import { useTambolaGame } from '@/hooks/use-tambola-game';
 
@@ -17,7 +15,6 @@ import { useAuth, useUser } from '@/firebase';
 import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
 
 const GAME_ID = 'main-game';
-const AUDIO_CACHE_PREFIX = 'tambola-audio-';
 
 export default function Home() {
   const { toast } = useToast();
@@ -32,41 +29,7 @@ export default function Home() {
 
   const { gameState, updateGame, resetGame, isLoading: isGameLoading } = useTambolaGame(GAME_ID, !!user);
   const [isCalling, setIsCalling] = React.useState(false);
-  const audioRef = React.useRef<HTMLAudioElement | null>(null);
   
-  // Audio Caching Functions
-  const getCachedAudio = (number: number): string | null => {
-    try {
-      return localStorage.getItem(`${AUDIO_CACHE_PREFIX}${number}`);
-    } catch (error) {
-      console.error("Could not access localStorage for audio cache.", error);
-      return null;
-    }
-  };
-
-  const setCachedAudio = (number: number, audioData: string) => {
-    try {
-      localStorage.setItem(`${AUDIO_CACHE_PREFIX}${number}`, audioData);
-    } catch (error)      {
-      console.error("Could not write to localStorage for audio cache.", error);
-    }
-  };
-
-  const playAudio = (audioData: string) => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-    audioRef.current = new Audio(audioData);
-    const playPromise = audioRef.current.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(error => {
-        console.error("Audio playback failed:", error);
-        setIsCalling(false);
-      });
-    }
-  };
-
-
   const callNextNumber = React.useCallback(async () => {
     if (isCalling || !gameState) return;
     if (gameState.calledNumbers.length >= 90) {
@@ -80,7 +43,7 @@ export default function Home() {
     setIsCalling(true);
 
     try {
-      // Generate a new number using a temporary AI call that doesn't do TTS
+      // Generate a new number
       const availableNumbers = Array.from({ length: 90 }, (_, i) => i + 1)
         .filter(n => !gameState.calledNumbers.includes(n));
       
@@ -93,27 +56,6 @@ export default function Home() {
 
       await updateGame(newNumber);
 
-      const cachedAudio = getCachedAudio(newNumber);
-
-      if (cachedAudio) {
-        playAudio(cachedAudio);
-      } else {
-        const result = await generateAudio({
-          numberToAnnounce: newNumber,
-        } satisfies GenerateAudioInput);
-
-        if (result.audio) {
-          setCachedAudio(newNumber, result.audio);
-          playAudio(result.audio);
-        } else {
-          toast({
-            variant: 'destructive',
-            title: 'Audio Error',
-            description: 'Could not generate audio, but the number is updated.',
-          });
-          setIsCalling(false);
-        }
-      }
     } catch (error) {
       console.error('Failed to call next number:', error);
       toast({
@@ -121,7 +63,9 @@ export default function Home() {
         title: 'Error',
         description: 'Could not generate the next number.',
       });
-      setIsCalling(false);
+    } finally {
+      // Use a short delay to simulate announcement time
+      setTimeout(() => setIsCalling(false), 500);
     }
   }, [isCalling, gameState, toast, updateGame]);
 
@@ -130,38 +74,19 @@ export default function Home() {
   };
   
   const handlePause = () => {
+    // Since there's no long-running audio, pause is less critical, 
+    // but we can stop any visual indicators.
     setIsCalling(false);
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
   };
 
   const handleNewGame = async () => {
     setIsCalling(false);
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
     await resetGame();
     toast({
       title: 'New Game Started',
       description: 'The board has been cleared. Ready to start!',
     });
   };
-  
-  React.useEffect(() => {
-    const currentAudio = audioRef.current;
-    if (currentAudio) {
-      const onEnded = () => setIsCalling(false);
-      currentAudio.addEventListener('ended', onEnded);
-      return () => {
-        if (currentAudio) {
-            currentAudio.removeEventListener('ended', onEnded);
-        }
-      };
-    }
-  }, [isCalling]);
-
 
   const isLoading = isUserLoading || isGameLoading;
   const isGameOver = !isLoading && gameState && gameState.calledNumbers.length >= 90;
