@@ -106,11 +106,8 @@ export default function Home() {
     await resetGame();
     toast({
       title: 'New Game Started',
-      description: 'The board has been cleared. The first number will be called now.',
+      description: 'The board has been cleared. Ready to start!',
     });
-    setTimeout(() => {
-        callNextNumber();
-    }, 500);
   };
   
   React.useEffect(() => {

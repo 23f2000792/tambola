@@ -116,12 +116,12 @@ const generateAndAnnounceNumberFlow = ai.defineFlow(
 
     try {
       const {media} = await ai.generate({
-        model: googleAI.model('text-to-speech-2-anvil'),
+        model: googleAI.model('text-to-speech-1'),
         config: {
           responseModalities: ['AUDIO'],
           speechConfig: {
             voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: 'en-US-Standard-C' },
+              prebuiltVoiceConfig: { voiceName: 'en-US-News-M' },
             },
           },
         },
