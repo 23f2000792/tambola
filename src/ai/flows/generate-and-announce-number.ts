@@ -100,7 +100,7 @@ function getAnnouncementText(number: number): string {
   const numberWords = (num: number) => num.toString().split('').map(digit => numberToWordsMap[parseInt(digit, 10)]).join(' ');
 
   if (number >= 1 && number <= 9) {
-    return `${numberWords(number)}.`;
+    return `Single number ${numberWords(number)}, ${number}.`;
   } else {
     const textPart = `${numberWords(number)}, ${number}`;
     return `${textPart}. I repeat, ${textPart}.`;
