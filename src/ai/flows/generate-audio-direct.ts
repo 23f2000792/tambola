@@ -4,12 +4,10 @@
  * @fileOverview Generates audio for a given text using Google Cloud Text-to-Speech directly.
  *
  * - generateAudio - A function that generates the audio.
- * - GenerateAudioInput - The input type for the generateAudio function.
- * - GenerateAudioOutput - The return type for the generateAudio function.
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
+import { GenerateAudioInputSchema, GenerateAudioOutputSchema, type GenerateAudioInput, type GenerateAudioOutput } from '@/ai/schemas/generate-audio-schema';
 import { TextToSpeechClient } from '@google-cloud/text-to-speech';
 
 // Helper function to get announcement text
@@ -32,19 +30,6 @@ function getAnnouncementText(number: number): string {
     return `${textPart}. I repeat, ${textPart}.`;
   }
 }
-
-
-export const GenerateAudioInputSchema = z.object({
-  numberToAnnounce: z.number().min(1).max(90),
-});
-export type GenerateAudioInput = z.infer<typeof GenerateAudioInputSchema>;
-
-export const GenerateAudioOutputSchema = z.object({
-  number: z.number(),
-  audio: z.string().describe('The base64 encoded audio data as a data URI.'),
-});
-export type GenerateAudioOutput = z.infer<typeof GenerateAudioOutputSchema>;
-
 
 export async function generateAudio(input: GenerateAudioInput): Promise<GenerateAudioOutput> {
     return generateAudioFlow(input);

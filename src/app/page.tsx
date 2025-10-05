@@ -3,6 +3,7 @@
 
 import * as React from 'react';
 import { generateAudio } from '@/ai/flows/generate-audio-direct';
+import type { GenerateAudioInput } from '@/ai/schemas/generate-audio-schema';
 import { useToast } from '@/hooks/use-toast';
 import { useTambolaGame } from '@/hooks/use-tambola-game';
 
@@ -46,7 +47,7 @@ export default function Home() {
   const setCachedAudio = (number: number, audioData: string) => {
     try {
       localStorage.setItem(`${AUDIO_CACHE_PREFIX}${number}`, audioData);
-    } catch (error) {
+    } catch (error)      {
       console.error("Could not write to localStorage for audio cache.", error);
     }
   };
@@ -99,7 +100,7 @@ export default function Home() {
       } else {
         const result = await generateAudio({
           numberToAnnounce: newNumber,
-        });
+        } satisfies GenerateAudioInput);
 
         if (result.audio) {
           setCachedAudio(newNumber, result.audio);
