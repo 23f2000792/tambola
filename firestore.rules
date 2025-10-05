@@ -1,46 +1,43 @@
 /**
- * @file Firestore Security Rules
- * @core_philosophy This ruleset enforces a public-access model for all data.
- *   All read and write operations are allowed for all users, authenticated or anonymous.
- *   This is intended for prototyping purposes only and should be replaced with a more
- *   restrictive security model for production use.
- * @data_structure The data is organized into a top-level collection of `tambola_games`,
- *   each containing a subcollection of `called_numbers`. There are no user-specific
- *   collections or subcollections.
- * @key_security_decisions All reads and writes are allowed. No authorization checks are performed.
+ * @description This ruleset enforces a public read policy for Tambola games and their called numbers, allowing anyone to read game state and history. Write access is completely disabled in this prototype.
+ * @dataStructure
+ *  - /tambola_games/{gameId}: Stores Tambola game sessions.
+ *  - /tambola_games/{gameId}/called_numbers/{numberId}: Stores numbers called during a specific game.
+ * @keySecurityDecisions
+ *  - Public Read: All `get` and `list` operations are allowed for all users, including unauthenticated users.
+ *  - No Writes: All `create`, `update`, and `delete` operations are denied to all users.
+ *  - No authorization or ownership checks are performed, as the application currently lacks a concept of user identity or roles beyond anonymous users.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Allows any user to read or write Tambola game sessions.
+     * @description Allows anyone to read Tambola game sessions. Writing is disallowed.
      * @path /tambola_games/{gameId}
-     * @allow (create) Any user can create a new Tambola game session.
-     * @allow (get) Any user can read a Tambola game session.
-     * @allow (list) Any user can list all Tambola game sessions.
-     * @allow (update) Any user can update a Tambola game session.
-     * @allow (delete) Any user can delete a Tambola game session.
-     * @principle Allows any operation on the document.
+     * @allow (get, list) Any user can read game data.
+     * @deny (create, update, delete) No one can create, update, or delete games.
+     * @principle Allows public read access while restricting all write access.
      */
-    match /tambola_games/{gameId} {
+    match /tambolaGames/{gameId} {
       allow get, list: if true;
-      allow create, update, delete: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
 
     /**
-     * @description Allows any user to read or write called numbers for a specific Tambola game.
+     * @description Allows anyone to read called numbers within a Tambola game. Writing is disallowed.
      * @path /tambola_games/{gameId}/called_numbers/{numberId}
-     * @allow (create) Any user can create a new called number.
-     * @allow (get) Any user can read a called number.
-     * @allow (list) Any user can list all called numbers for a game.
-     * @allow (update) Any user can update a called number.
-     * @allow (delete) Any user can delete a called number.
-     * @principle Allows any operation on the document.
+     * @allow (get, list) Any user can read called number data.
+     * @deny (create, update, delete) No one can create, update, or delete called numbers.
+     * @principle Allows public read access while restricting all write access.
      */
-    match /tambola_games/{gameId}/called_numbers/{numberId} {
+    match /tambolaGames/{gameId}/calledNumbers/{numberId} {
       allow get, list: if true;
-      allow create, update, delete: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
   }
 }
