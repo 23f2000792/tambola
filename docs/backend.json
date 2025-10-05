@@ -1,0 +1,118 @@
+{
+  "entities": {
+    "TambolaGame": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "TambolaGame",
+      "type": "object",
+      "description": "Represents a single Tambola game session.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Tambola game session."
+        },
+        "startTime": {
+          "type": "string",
+          "description": "Timestamp indicating when the game started.",
+          "format": "date-time"
+        },
+        "endTime": {
+          "type": "string",
+          "description": "Timestamp indicating when the game ended. Null if the game is in progress.",
+          "format": "date-time"
+        },
+        "gameState": {
+          "type": "string",
+          "description": "Current state of the game (e.g., 'new', 'running', 'paused', 'completed')."
+        }
+      },
+      "required": [
+        "id",
+        "startTime",
+        "gameState"
+      ]
+    },
+    "CalledNumber": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CalledNumber",
+      "type": "object",
+      "description": "Represents a single number called during a Tambola game.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the called number event."
+        },
+        "gameId": {
+          "type": "string",
+          "description": "Reference to the TambolaGame. (Relationship: TambolaGame 1:N CalledNumber)"
+        },
+        "number": {
+          "type": "number",
+          "description": "The number that was called (1-90)."
+        },
+        "callTime": {
+          "type": "string",
+          "description": "Timestamp indicating when the number was called.",
+          "format": "date-time"
+        },
+        "sequenceNumber": {
+          "type": "number",
+          "description": "The sequence in which the number was called (e.g., 1st, 2nd, 3rd number called)."
+        }
+      },
+      "required": [
+        "id",
+        "gameId",
+        "number",
+        "callTime",
+        "sequenceNumber"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/tambola_games/{gameId}",
+        "definition": {
+          "entityName": "TambolaGame",
+          "schema": {
+            "$ref": "#/backend/entities/TambolaGame"
+          },
+          "description": "Stores the Tambola game sessions.  Each document represents a single game.  The 'gameId' is used as the document ID.",
+          "params": [
+            {
+              "name": "gameId",
+              "description": "The unique identifier for the Tambola game session."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/tambola_games/{gameId}/called_numbers/{numberId}",
+        "definition": {
+          "entityName": "CalledNumber",
+          "schema": {
+            "$ref": "#/backend/entities/CalledNumber"
+          },
+          "description": "Stores the numbers called during a specific Tambola game. Each document represents a single called number with its sequence and timestamp. 'gameId' links back to the TambolaGame document. The 'numberId' is the unique ID.",
+          "params": [
+            {
+              "name": "gameId",
+              "description": "The unique identifier for the Tambola game session."
+            },
+            {
+              "name": "numberId",
+              "description": "The unique identifier for the called number event."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to efficiently store and retrieve Tambola game data while ensuring scalability and security. It separates game sessions and called numbers into distinct collections with a hierarchical structure to maintain a clear relationship between them. The design prioritizes authorization independence. Since the application has no concept of roles or ownership beyond anonymous users, no denormalization is required."
+  }
+}

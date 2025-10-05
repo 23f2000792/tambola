@@ -1,0 +1,52 @@
+/**
+ * @fileoverview Firestore Security Rules for Tambola Game Data
+ *
+ * Core Philosophy:
+ * This ruleset enforces public read access to all Tambola game data, allowing anyone to view game sessions and called numbers.
+ * Write access is completely disabled to prevent unauthorized modification of game data. This is suitable for applications that only read data from Firestore, and do not require write permissions from the client side.
+ *
+ * Data Structure:
+ * The Firestore database contains two collections:
+ * - /tambola_games/{gameId}: Stores individual Tambola game session data.
+ * - /tambola_games/{gameId}/called_numbers/{numberId}: Stores the sequence of called numbers for each game.
+ *
+ * Key Security Decisions:
+ * - Public Read: All `get` and `list` operations are allowed for all users.
+ * - No Writes: All `create`, `update`, and `delete` operations are explicitly denied to all users, including authenticated ones.
+ * - No User Roles: This design does not incorporate any user roles or ownership.
+ * - No Denormalization: No denormalization is required as the authorization model is based solely on disabling write access.
+ * - These rules do not validate the data model to allow for rapid prototyping.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Allows anyone to read Tambola game session data, but disallows any writes.
+     * @path /tambola_games/{gameId}
+     * @allow (get, list) Any user can read game data.
+     * @deny (create, update, delete) No user can create, update, or delete game data.
+     * @principle Allows public read access while strictly controlling writes.
+     */
+    match /tambola_games/{gameId} {
+      allow get, list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Allows anyone to read called numbers for a specific game, but disallows any writes.
+     * @path /tambola_games/{gameId}/called_numbers/{numberId}
+     * @allow (get, list) Any user can read called number data.
+     * @deny (create, update, delete) No user can create, update, or delete called number data.
+     * @principle Allows public read access while strictly controlling writes.
+     */
+    match /tambola_games/{gameId}/called_numbers/{numberId} {
+      allow get, list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+  }
+}
