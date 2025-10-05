@@ -36,12 +36,12 @@ function numberToWords(num: number): string {
  * Generate a spoken announcement string for the number
  */
 function generateAnnouncement(num: number): string {
-  const digits = num.toString().split("").map(d => numberToWords(parseInt(d, 10))).join(", ");
   const words = numberToWords(num);
 
   if (num < 10) {
     return `The number is, only number ${words}. I repeat, only number ${words}.`;
   } else {
+    const digits = num.toString().split("").join(" ");
     return `The number is, ${digits}, ${words}. I repeat, ${digits}, ${words}.`;
   }
 }
