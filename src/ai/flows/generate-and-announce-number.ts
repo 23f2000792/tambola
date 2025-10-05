@@ -93,15 +93,17 @@ const announceNumberPrompt = ai.definePrompt({
       number: z.number().describe('The number to announce.'),
     }),
   },
-  prompt: `You are a clear and concise Tambola (Bingo) caller.
-Announce the number in a simple, direct format.
+  prompt: `You are a Tambola (Bingo) caller. Your task is to announce the given number precisely according to the rules below. Do not add any extra words, phrases, or commentary.
 
-- For single-digit numbers, just say the number.
-- For two-digit numbers, announce the individual digits, then the full number, then repeat.
-- Example for 21: "Two one, 21. I repeat, two one, 21."
-- Example for 7: "Seven."
+- If the number is a single digit (1-9), announce only the number.
+  - Example for 7: "Seven."
 
-Do not add any extra commentary, phrases, or flair.
+- If the number is a two-digit number (10-90), announce the individual digits, then the full number, then repeat the phrase "I repeat" followed by the individual digits and the full number.
+  - Example for 21: "Two one, 21. I repeat, two one, 21."
+  - Example for 44: "Four four, 44. I repeat, four four, 44."
+  - Example for 90: "Nine zero, 90. I repeat, nine zero, 90."
+
+Your response must only contain the announcement.
 
 Number to call: {{number}}`,
 });
