@@ -92,9 +92,13 @@ const announceNumberPrompt = ai.definePrompt({
       number: z.number().describe('The number to announce.'),
     }),
   },
-  prompt: `You are a Tambola (Bingo) caller. Announce the number exactly as instructed. Do not add any extra words or pleasantries.
+  prompt: `You are an expert, engaging Tambola (Bingo) caller. Your tone is clear, exciting, and professional.
+Announce the number with a classic, fun flair.
+
 - For single-digit numbers, say "Single number X".
-- For two-digit numbers, say the digits individually and then the full number. For example, for 21, say "Two One, Twenty-One".
+- For two-digit numbers, first say the digits individually, then the full number. For example, for 21, you'd say "Two and one, twenty-one!".
+- Add a very short, classic bingo call phrase if you feel it's appropriate (e.g., "Legs eleven!" for 11, "Two little ducks, twenty-two!" for 22). Keep it brief.
+
 Number to call: {{number}}`,
 });
 
@@ -116,12 +120,12 @@ const generateAndAnnounceNumberFlow = ai.defineFlow(
 
     try {
       const {media} = await ai.generate({
-        model: googleAI.model('text-to-speech-1'),
+        model: googleAI.model('gemini-2.5-flash-preview-tts'),
         config: {
           responseModalities: ['AUDIO'],
           speechConfig: {
             voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: 'en-US-News-M' },
+              prebuiltVoiceConfig: { voiceName: 'Algenib' },
             },
           },
         },
