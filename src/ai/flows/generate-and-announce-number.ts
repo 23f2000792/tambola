@@ -79,7 +79,7 @@ function getAnnouncementText(number: number): string {
   const numberWords = (num: number) => num.toString().split('').map(digit => numberToWordsMap[parseInt(digit, 10)]).join(' ');
 
   if (number >= 1 && number <= 9) {
-    return `Single number ${numberWords(number)}, ${number}.`;
+    return `Single number ${number}.`;
   } else {
     const textPart = `${numberWords(number)}, ${number}`;
     return `${textPart}. I repeat, ${textPart}.`;
@@ -98,7 +98,7 @@ const generateAndAnnounceNumberFlow = ai.defineFlow(
     const announceText = getAnnouncementText(numberToAnnounce);
 
     if (!announceText || announceText.trim() === '') {
-      console.error("TTS text is empty!");
+      console.error(`Invalid text for TTS: number ${numberToAnnounce} resulted in empty announcement text.`);
       return { number: numberToAnnounce, audio: '' };
     }
 
@@ -109,7 +109,7 @@ const generateAndAnnounceNumberFlow = ai.defineFlow(
           responseModalities: ['AUDIO'],
           speechConfig: {
             voiceConfig: {
-                prebuiltVoiceConfig: { voiceName: 'en-US-News-M' },
+                prebuiltVoiceConfig: { voiceName: 'en-IN-Wavenet-C' },
             },
           },
         },
