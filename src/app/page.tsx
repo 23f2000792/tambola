@@ -11,17 +11,28 @@ import GameControls from '@/components/tambola/controls';
 import CurrentDisplay from '@/components/tambola/current-display';
 import { Skeleton } from '@/components/ui/skeleton';
 import CalledNumbersHistory from '@/components/tambola/called-numbers-history';
+import { useAuth, useUser } from '@/firebase';
+import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
 
 const GAME_ID = 'main-game';
 
 export default function Home() {
   const { toast } = useToast();
-  const { gameState, updateGame, resetGame, isLoading } = useTambolaGame(GAME_ID);
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+
+  React.useEffect(() => {
+    if (!user && !isUserLoading) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [user, isUserLoading, auth]);
+
+  const { gameState, updateGame, resetGame, isLoading: isGameLoading } = useTambolaGame(GAME_ID, !!user);
   const [isCalling, setIsCalling] = React.useState(false);
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
 
   const callNextNumber = React.useCallback(async () => {
-    if (isCalling) return;
+    if (isCalling || !gameState) return;
     if (gameState.calledNumbers.length >= 90) {
       toast({
         title: 'Game Over!',
@@ -48,14 +59,11 @@ export default function Home() {
         const playPromise = audioRef.current.play();
         if (playPromise !== undefined) {
           playPromise.then(_ => {
-            // Automatic playback started!
-            // We can add a listener for when the audio finishes.
             audioRef.current?.addEventListener('ended', () => {
               setIsCalling(false);
             });
           }).catch(error => {
             console.error("Audio playback failed:", error);
-            // If autoplay fails, we should also reset the state.
             setIsCalling(false);
           });
         }
@@ -71,7 +79,7 @@ export default function Home() {
       });
       setIsCalling(false);
     }
-  }, [isCalling, gameState.calledNumbers, toast, updateGame]);
+  }, [isCalling, gameState, toast, updateGame]);
 
   const handleNextNumber = () => {
     callNextNumber();
@@ -87,18 +95,18 @@ export default function Home() {
       title: 'New Game Started',
       description: 'The board has been cleared. The first number will be called now.',
     });
-    // Use a short delay to allow the toast to be seen before the first number is called
     setTimeout(() => {
         callNextNumber();
     }, 500);
   };
 
-  const isGameOver = gameState.calledNumbers.length >= 90;
+  const isLoading = isUserLoading || isGameLoading;
+  const isGameOver = !isLoading && gameState && gameState.calledNumbers.length >= 90;
 
   return (
     <div className="flex flex-col items-center min-h-screen bg-background text-foreground p-2 sm:p-4 font-body">
       <GameHeader />
-      {isLoading ? (
+      {isLoading || !gameState ? (
         <div className="flex flex-col lg:flex-row gap-8 w-full max-w-7xl mx-auto items-start justify-center mt-8">
           <div className="flex flex-col gap-4 w-full lg:w-96 lg:shrink-0">
             <Skeleton className="h-64 w-full" />

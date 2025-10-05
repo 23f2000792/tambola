@@ -16,25 +16,26 @@ const initialState: GameState = {
   currentNumber: null,
 };
 
-export function useTambolaGame(gameId: string) {
-  const [gameState, setGameState] = useState<GameState>(initialState);
+export function useTambolaGame(gameId: string, enabled: boolean = true) {
+  const [gameState, setGameState] = useState<GameState | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const firestore = useFirestore();
 
   useEffect(() => {
-    if (!gameId || !firestore) {
-      if (!firestore) {
+    if (!gameId || !firestore || !enabled) {
+      if (enabled && !firestore) {
         toast({
             variant: "destructive",
             title: "Firebase Error",
             description: "Firestore is not available. Game state cannot be synced.",
         });
       }
-      setIsLoading(false);
+      setIsLoading(!enabled);
       return;
     }
 
+    setIsLoading(true);
     const gameDocRef = doc(firestore, 'tambolaGames', gameId);
 
     const unsubscribe = onSnapshot(
@@ -69,10 +70,10 @@ export function useTambolaGame(gameId: string) {
 
     // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, [gameId, toast, firestore]);
+  }, [gameId, toast, firestore, enabled]);
 
   const updateGame = useCallback(async (newNumber: number) => {
-    if (!gameId || !firestore) return;
+    if (!gameId || !firestore || !gameState) return;
 
     const gameDocRef = doc(firestore, 'tambolaGames', gameId);
     const newCalledNumbers = [...gameState.calledNumbers, newNumber];
@@ -89,7 +90,7 @@ export function useTambolaGame(gameId: string) {
         });
         errorEmitter.emit('permission-error', permissionError);
     });
-  }, [gameId, gameState.calledNumbers, firestore]);
+  }, [gameId, gameState, firestore]);
 
   const resetGame = useCallback(async () => {
     if (!gameId || !firestore) return;
