@@ -1,49 +1,53 @@
 /**
- * @file Firestore Security Rules for Tambola Game
- * @core_philosophy This ruleset allows any authenticated user to read and write Tambola game data.
- * There is no concept of game ownership or roles, so any logged-in user can participate in any game.
- * Anonymous authentication is enabled, meaning unauthenticated users cannot participate.
- * @data_structure Tambola games are stored in the `/tambola_games/{gameId}` collection, and called numbers are stored in the `/tambola_games/{gameId}/called_numbers/{numberId}` subcollection.
- * @key_security_decisions Public read/write access is granted to authenticated users.
- * @denormalization_for_authorization Not applicable since there are no roles or specific ownership.
- * @structural_segregation Not applicable.
+ * @file Firebase Security Rules for Tambola Game.
+ *
+ * @description This ruleset allows public read access to Tambola game data
+ * and restricts write access.  Since anonymous auth is allowed all writes are disallowed.
+ *
+ * @dataStructure
+ * - /tambola_games/{gameId}: Stores Tambola game sessions.
+ * - /tambola_games/{gameId}/called_numbers/{numberId}: Stores called numbers for each game.
+ *
+ * @keySecurityDecisions
+ * - Public read access is granted to all game data.
+ * - Write access is completely disabled given the anonymous auth.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Allows any authenticated user to read and write Tambola game data.
-     * @path /tambola_games/{gameId}
-     * @allow (read, write) If the user is authenticated.
-     * @deny (read, write) If the user is not authenticated.
-     * @principle Allows authenticated users to read and write game data.
+     * @description Allows anyone to read Tambola game sessions.
+     * @path /tambolaGames/{gameId}
+     * @allow (get) Any user can read a tambola game session.
+     * @allow (list) Any user can list tambola game sessions.
+     * @deny (create) No one can create a tambola game session.
+     * @deny (update) No one can update a tambola game session.
+     * @deny (delete) No one can delete a tambola game session.
+     * @principle Allows public read access to game sessions, denies all writes.
      */
-    match /tambola_games/{gameId} {
-      allow get, list: if isSignedIn();
-      allow create, update, delete: if isSignedIn();
+    match /tambolaGames/{gameId} {
+      allow get, list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
 
     /**
-     * @description Allows any authenticated user to read and write called numbers for a specific Tambola game.
-     * @path /tambola_games/{gameId}/called_numbers/{numberId}
-     * @allow (read, write) If the user is authenticated.
-     * @deny (read, write) If the user is not authenticated.
-     * @principle Allows authenticated users to manage called numbers within a game.
+     * @description Allows anyone to read called numbers for a specific Tambola game.
+     * @path /tambolaGames/{gameId}/calledNumbers/{numberId}
+     * @allow (get) Any user can read a called number.
+     * @allow (list) Any user can list called numbers for a game.
+     * @deny (create) No one can create a called number.
+     * @deny (update) No one can update a called number.
+     * @deny (delete) No one can delete a called number.
+     * @principle Allows public read access to called numbers, denies all writes.
      */
-    match /tambola_games/{gameId}/called_numbers/{numberId} {
-      allow get, list: if isSignedIn();
-      allow create, update, delete: if isSignedIn();
-    }
-
-    // ---- Helper functions ----
-
-    /**
-     * @description Checks if the user is signed in.
-     * @return True if the user is authenticated, false otherwise.
-     */
-    function isSignedIn() {
-      return request.auth != null;
+    match /tambolaGames/{gameId}/calledNumbers/{numberId} {
+      allow get, list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
   }
 }
