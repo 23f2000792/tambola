@@ -4,6 +4,7 @@
 import * as React from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useTambolaGame } from '@/hooks/use-tambola-game';
+import { useSpeechSynthesis } from '@/hooks/use-speech-synthesis';
 
 import GameHeader from '@/components/tambola/header';
 import TambolaBoard from '@/components/tambola/board';
@@ -13,19 +14,43 @@ import { Skeleton } from '@/components/ui/skeleton';
 import CalledNumbersHistory from '@/components/tambola/called-numbers-history';
 import { useAuth, useUser } from '@/firebase';
 import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
-import { generateAnnouncementAudio } from '@/ai/flows/generate-announcement-audio';
 
 const GAME_ID = 'main-game';
 
-// Simple in-memory cache for audio
-const audioCache = new Map<number, string>();
+/**
+ * Convert a number to its word representation.
+ */
+function numberToWords(num: number): string {
+  const a = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
+  const b = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+
+  if (num < 20) return a[num];
+  const tens = Math.floor(num / 10);
+  const ones = num % 10;
+  return b[tens] + (ones > 0 ? " " + a[ones] : "");
+}
+
+/**
+ * Generate a spoken announcement string for the number in an Indian style.
+ */
+function generateAnnouncement(num: number): string {
+    const words = numberToWords(num);
+
+    if (num < 10) {
+        return `The number is, only number ${words}. I repeat, only number ${words}.`;
+    } else {
+        const digits = num.toString().split("").join(" ");
+        return `The number is, ${digits}, ${words}. I repeat, ${digits}, ${words}.`;
+    }
+}
+
 
 export default function Home() {
   const { toast } = useToast();
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
-  const audioRef = React.useRef<HTMLAudioElement | null>(null);
-
+  const { speak, cancel, isSpeaking } = useSpeechSynthesis();
+  
   React.useEffect(() => {
     if (auth && !user && !isUserLoading) {
       initiateAnonymousSignIn(auth);
@@ -33,10 +58,10 @@ export default function Home() {
   }, [user, isUserLoading, auth]);
 
   const { gameState, updateGame, resetGame, isLoading: isGameLoading } = useTambolaGame(GAME_ID, !!user);
-  const [isCalling, setIsCalling] = React.useState(false);
   
   const callNextNumber = React.useCallback(async () => {
-    if (isCalling || !gameState) return;
+    if (isSpeaking || !gameState) return;
+
     if (gameState.calledNumbers.length >= 90) {
       toast({
         title: 'Game Over!',
@@ -45,14 +70,11 @@ export default function Home() {
       return;
     }
 
-    setIsCalling(true);
-
     try {
       const availableNumbers = Array.from({ length: 90 }, (_, i) => i + 1)
         .filter(n => !gameState.calledNumbers.includes(n));
       
       if (availableNumbers.length === 0) {
-          setIsCalling(false);
           return;
       }
 
@@ -60,33 +82,8 @@ export default function Home() {
       
       await updateGame(newNumber);
       
-      let audioDataUri = audioCache.get(newNumber);
-
-      if (!audioDataUri) {
-        const generatedAudio = await generateAnnouncementAudio(newNumber);
-        if (generatedAudio) {
-            audioDataUri = generatedAudio;
-            audioCache.set(newNumber, audioDataUri);
-        } else {
-           toast({
-                variant: 'destructive',
-                title: 'Audio Error',
-                description: 'Could not generate audio.',
-            });
-        }
-      }
-      
-      if (audioDataUri) {
-         if (audioRef.current) {
-            audioRef.current.pause();
-        }
-        const audio = new Audio(audioDataUri);
-        audioRef.current = audio;
-        audio.play();
-        audio.onended = () => setIsCalling(false);
-      } else {
-        setIsCalling(false);
-      }
+      const announcement = generateAnnouncement(newNumber);
+      speak(announcement);
 
     } catch (error) {
       console.error('Failed to call next number:', error);
@@ -95,19 +92,15 @@ export default function Home() {
         title: 'Error',
         description: 'Could not call the next number.',
       });
-      setIsCalling(false);
     }
-  }, [isCalling, gameState, toast, updateGame]);
+  }, [isSpeaking, gameState, toast, updateGame, speak]);
 
   const handleNextNumber = () => {
     callNextNumber();
   };
   
   const handlePause = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-    setIsCalling(false);
+    cancel();
   };
 
   const handleNewGame = async () => {
@@ -140,10 +133,10 @@ export default function Home() {
             <CurrentDisplay
               currentNumber={gameState.currentNumber}
               calledNumbers={gameState.calledNumbers}
-              isCalling={isCalling}
+              isCalling={isSpeaking}
             />
             <GameControls
-              isGameRunning={isCalling}
+              isGameRunning={isSpeaking}
               isGameOver={isGameOver}
               onNewGame={handleNewGame}
               onNextNumber={handleNextNumber}
